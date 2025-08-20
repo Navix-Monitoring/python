@@ -1,0 +1,1 @@
+# Script-Python-Captura-de-Hardware
