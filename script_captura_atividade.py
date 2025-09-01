@@ -16,7 +16,7 @@ print(r"""
           |_|                                            
 """)
 
-df_inicial = pd.DataFrame(columns=['timestamp','user', 'cpu', 'ram', 'disco'])
+df_inicial = pd.DataFrame(columns=['timestamp','user', 'cpu', 'ram', 'disco', 'nucleos_logicos', 'nucleos_fisicos', 'total_processos'])
 df_inicial.to_csv("captura.csv", index=False)
 
 while True:
@@ -26,25 +26,32 @@ while True:
     porcentagem_disco = psutil.disk_usage('/').percent
     tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     processos = list(psutil.process_iter())
+    total_processos = len(processos)
+    nucleos_logicos = psutil.cpu_count(logical=True)
+    nucleos_fisicos = psutil.cpu_count(logical=False)
 
     df = pd.DataFrame([{
         'timestamp': tempo_atual,
         'user': usuario,
         'cpu': porcentagem_cpu,
         'ram': porcentagem_ram,
-        'disco': porcentagem_disco
+        'disco': porcentagem_disco,
+        'nucleos_logicos': nucleos_logicos,
+        'nucleos_fisicos': nucleos_fisicos,
+        'total_processos': total_processos
     }])
 
-    print("Capturando nome do usuário, cpu, ram, disco, hora atual e processos inserindo no arquivo 'captura.csv'!\n")
+    print("Capturando nome do usuário, cpu, ram, disco, hora atual, total de nucleos e processos inserindo no arquivo 'captura.csv'!\n")
     df.to_csv('captura.csv', mode='a', index=False, header=False)
 
     print("Captura realizada com sucesso!\n")
 
     df_leitura = pd.read_csv('captura.csv')
-    print(df_leitura[df_leitura.columns[1:]])
+    print("Ultimo dado inserido:\n")
+    print(df_leitura[len(df_leitura)-1:])
 
-    ultimosProcessos = processos[-10:] 
-    print("\nExibição dos ultimos 10 processos (depuração)\n")
+    ultimosProcessos = processos[-5:]
+    print("\nExibição dos ultimos 5 processos (depuração)\n")
     for process in ultimosProcessos:
         print(f"PID: {process.pid}, Nome: {process.name()}")
 
