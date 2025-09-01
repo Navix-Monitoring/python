@@ -16,8 +16,12 @@ print(r"""
           |_|                                            
 """)
 
-df_inicial = pd.DataFrame(columns=['timestamp','user', 'cpu', 'ram', 'disco', 'nucleos_logicos', 'nucleos_fisicos', 'total_processos'])
+df_inicial = pd.DataFrame(columns=['timestamp','user', 'cpu', 'ram', 'disco', 'nucleos_logicos', 'nucleos_fisicos'])
 df_inicial.to_csv("captura.csv", index=False)
+
+
+df_processo = pd.DataFrame(columns=['timestamp','id', 'processo', 'uso de cpu', 'uso de memoria'])
+df_processo.to_csv("processos.csv", index=False)
 
 while True:
     usuario = psutil.users()[0].name
@@ -53,29 +57,41 @@ while True:
         reverse=True
     )
 
+    print("Capturando processos e inserindo no arquivo 'processos.csv'\n")
+    for processo in processosOrdenados_Cpu:
+        dfProcesso = pd.DataFrame([{
+            'timestamp': tempo_atual,
+            'id': processo.info['pid'],
+            'processo': processo.info['name'],
+            'uso de cpu': f'{processo.info['cpu_percent']:.2f}',
+            'uso de memoria': f'{processo.info['memory_info'].rss / 1024**2:.2f}'
+        }])
+        dfProcesso.to_csv('processos.csv', mode='a', index=False, header=False)
+    
+
+    dfProcesso = pd.read_csv('processos.csv')
+    print("Ultimo processo inserido:\n")
+    print(f'{dfProcesso[len(dfProcesso)-1:]}\n')
+
     maiorCPU = processosOrdenados_Cpu[0]
     maiorMemoria = processosOrdenados_Memoria[0]
 
+    print("________________________________________________________________________________________________________________")
     print("Processo com maior uso de CPU:\n")
-    print(f"Id do processo: {maiorCPU.info['pid']}, Processo: {maiorCPU.info['name']}, Porcentagem de uso: {maiorCPU.info['cpu_percent']:.2f}\n")
-
+    print(f"Id do processo: {maiorCPU.info['pid']}, Processo: {maiorCPU.info['name']}, Porcentagem de uso: {maiorCPU.info['cpu_percent']:.2f}%\n")
+    print("________________________________________________________________________________________________________________")
+    
     print("Processo com maior uso de Memória:\n")
-    print(f"Id do processo: {maiorMemoria.info['pid']}, Processo: {maiorMemoria.info['name']}, Porcentagem de uso: {maiorMemoria.info['memory_info'].rss / 1024**2:.2f}")
+    print(f"Id do processo: {maiorMemoria.info['pid']}, Processo: {maiorMemoria.info['name']}, Megas utilizados: {maiorMemoria.info['memory_info'].rss / 1024**2:.2f}MB")
+    print("________________________________________________________________________________________________________________")
 
-
-    print("Capturando nome do usuário, cpu, ram, disco, hora atual, total de nucleos e processos inserindo no arquivo 'captura.csv'!\n")
+    print("Capturando nome do usuário, cpu, ram, disco, hora atual, total de nucleos e inserindo no arquivo 'captura.csv'!\n")
     df.to_csv('captura.csv', mode='a', index=False, header=False)
 
     print("Captura realizada com sucesso!\n")
 
     df_leitura = pd.read_csv('captura.csv')
     print("Ultimo dado inserido:\n")
-    print(df_leitura[len(df_leitura)-1:])
-
-    ultimosProcessos = processos[-5:]
-    print("\nExibição dos ultimos 5 processos (depuração)\n")
-    for process in ultimosProcessos:
-        print(f"PID: {process.pid}, Nome: {process.name()}\n")
-    print("==========================================================================================================================")
+    print(f'{df_leitura[len(df_leitura)-1:]}\n')
 
     time.sleep(10)
