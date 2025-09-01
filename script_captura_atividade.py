@@ -57,6 +57,7 @@ while True:
         reverse=True
     )
 
+    print("________________________________________________________________________________________________________________\n")
     print("Capturando processos e inserindo no arquivo 'processos.csv'\n")
     for processo in processosOrdenados_Cpu:
         dfProcesso = pd.DataFrame([{
@@ -68,7 +69,6 @@ while True:
         }])
         dfProcesso.to_csv('processos.csv', mode='a', index=False, header=False)
     
-
     dfProcesso = pd.read_csv('processos.csv')
     print("Ultimo processo inserido:\n")
     print(f'{dfProcesso[len(dfProcesso)-1:]}\n')
@@ -76,22 +76,27 @@ while True:
     maiorCPU = processosOrdenados_Cpu[0]
     maiorMemoria = processosOrdenados_Memoria[0]
 
-    print("________________________________________________________________________________________________________________")
+    print("________________________________________________________________________________________________________________\n")
+    time.sleep(1)
     print("Processo com maior uso de CPU:\n")
     print(f"Id do processo: {maiorCPU.info['pid']}, Processo: {maiorCPU.info['name']}, Porcentagem de uso: {maiorCPU.info['cpu_percent']:.2f}%\n")
-    print("________________________________________________________________________________________________________________")
+    print("________________________________________________________________________________________________________________\n")
     
     print("Processo com maior uso de Memória:\n")
     print(f"Id do processo: {maiorMemoria.info['pid']}, Processo: {maiorMemoria.info['name']}, Megas utilizados: {maiorMemoria.info['memory_info'].rss / 1024**2:.2f}MB")
-    print("________________________________________________________________________________________________________________")
+
+    print("________________________________________________________________________________________________________________\n")
+    time.sleep(1)
 
     print("Capturando nome do usuário, cpu, ram, disco, hora atual, total de nucleos e inserindo no arquivo 'captura.csv'!\n")
     df.to_csv('captura.csv', mode='a', index=False, header=False)
-
+    print("....\n")
+    time.sleep(1)
     print("Captura realizada com sucesso!\n")
 
     df_leitura = pd.read_csv('captura.csv')
     print("Ultimo dado inserido:\n")
     print(f'{df_leitura[len(df_leitura)-1:]}\n')
+    print("==================================================================================================================")
 
     time.sleep(10)
