@@ -25,7 +25,7 @@ while True:
     porcentagem_ram = psutil.virtual_memory().percent
     porcentagem_disco = psutil.disk_usage('/').percent
     tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    processos = list(psutil.process_iter())
+    processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))
     total_processos = len(processos)
     nucleos_logicos = psutil.cpu_count(logical=True)
     nucleos_fisicos = psutil.cpu_count(logical=False)
@@ -41,6 +41,28 @@ while True:
         'total_processos': total_processos
     }])
 
+    processosOrdenados_Cpu = sorted(
+        processos,
+        key = lambda p: p.info['cpu_percent'],
+        reverse=True
+    )
+
+    processosOrdenados_Memoria = sorted(
+        processos,
+        key = lambda p: p.info['memory_info'],
+        reverse=True
+    )
+
+    maiorCPU = processosOrdenados_Cpu[0]
+    maiorMemoria = processosOrdenados_Memoria[0]
+
+    print("Processo com maior uso de CPU:\n")
+    print(f"Id do processo: {maiorCPU.info['pid']}, Processo: {maiorCPU.info['name']}, Porcentagem de uso: {maiorCPU.info['cpu_percent']:.2f}\n")
+
+    print("Processo com maior uso de Memória:\n")
+    print(f"Id do processo: {maiorMemoria.info['pid']}, Processo: {maiorMemoria.info['name']}, Porcentagem de uso: {maiorMemoria.info['memory_info'].rss / 1024**2:.2f}")
+
+
     print("Capturando nome do usuário, cpu, ram, disco, hora atual, total de nucleos e processos inserindo no arquivo 'captura.csv'!\n")
     df.to_csv('captura.csv', mode='a', index=False, header=False)
 
@@ -53,6 +75,7 @@ while True:
     ultimosProcessos = processos[-5:]
     print("\nExibição dos ultimos 5 processos (depuração)\n")
     for process in ultimosProcessos:
-        print(f"PID: {process.pid}, Nome: {process.name()}")
+        print(f"PID: {process.pid}, Nome: {process.name()}\n")
+    print("==========================================================================================================================")
 
     time.sleep(10)
