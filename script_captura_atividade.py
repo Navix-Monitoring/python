@@ -35,12 +35,16 @@ while True:
         'disco': porcentagem_disco
     }])
 
+    print("Capturando nome do usuário, cpu, ram, disco, hora atual e processos inserindo no arquivo 'captura.csv'!\n")
     df.to_csv('captura.csv', mode='a', index=False, header=False)
 
-    print("Dados capturados e inseridos no arquivo 'captura.csv'!\n")
+    print("Captura realizada com sucesso!\n")
+
+    df_leitura = pd.read_csv('captura.csv')
+    print(df_leitura[df_leitura.columns[1:]])
 
     ultimosProcessos = processos[-10:] 
-    print("Exibição dos ultimos 10 processos (depuração)\n")
+    print("\nExibição dos ultimos 10 processos (depuração)\n")
     for process in ultimosProcessos:
         print(f"PID: {process.pid}, Nome: {process.name()}")
 
