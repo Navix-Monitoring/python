@@ -16,7 +16,7 @@ print(r"""
           |_|                                            
 """)
 
-df_inicial = pd.DataFrame(columns=['timestamp','user', 'cpu', 'ram', 'disco', 'nucleos_logicos', 'nucleos_fisicos'])
+df_inicial = pd.DataFrame(columns=['timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'nucleos_logicos', 'nucleos_fisicos'])
 df_inicial.to_csv("captura.csv", index=False)
 
 
@@ -46,9 +46,22 @@ while True:
     total_processos = len(processos)
     nucleos_logicos = psutil.cpu_count(logical=True)
     nucleos_fisicos = psutil.cpu_count(logical=False)
+    enderecos = psutil.net_if_addrs()
+
+    interfaces_ignoradas = ['lo', 'docker0', 'virbr0', 'tun0']
+
+    for interface, enderecos_da_interface in enderecos.items():
+        if interface not in interfaces_ignoradas:
+            for endereco in enderecos_da_interface:
+                if endereco.family == psutil.AF_LINK: 
+                    enderecoMac = endereco.address
+                    print(f'Endereço MAC da interface {interface}: {enderecoMac}')
+                    break
+            break 
 
     df = pd.DataFrame([{
         'timestamp': tempo_atual,
+        'endereco_mac': enderecoMac,
         'user': usuario,
         'cpu': porcentagem_cpu,
         'ram': porcentagem_ram,
