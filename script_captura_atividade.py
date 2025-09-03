@@ -1,7 +1,8 @@
 import psutil
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+import socket
 
 print(r"""
  ___       _      _                 _       
@@ -19,9 +20,11 @@ print(r"""
 df_inicial = pd.DataFrame(columns=['timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'nucleos_logicos', 'nucleos_fisicos'])
 df_inicial.to_csv("captura.csv", index=False)
 
+AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
 
 df_processo = pd.DataFrame(columns=['timestamp','id', 'processo', 'uso de cpu', 'uso de memoria'])
 df_processo.to_csv("processos.csv", index=False)
+
 
 while True:
     print("==================================================================================================================")
@@ -43,7 +46,6 @@ while True:
     porcentagem_disco = psutil.disk_usage('/').percent
     tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))
-    total_processos = len(processos)
     nucleos_logicos = psutil.cpu_count(logical=True)
     nucleos_fisicos = psutil.cpu_count(logical=False)
     enderecos = psutil.net_if_addrs()
@@ -53,7 +55,7 @@ while True:
     for interface, enderecos_da_interface in enderecos.items():
         if interface not in interfaces_ignoradas:
             for endereco in enderecos_da_interface:
-                if endereco.family == psutil.AF_LINK: 
+                if endereco.family == AF_LINK:
                     enderecoMac = endereco.address
                     print(f'Endereço MAC da interface {interface}: {enderecoMac}')
                     break
@@ -67,8 +69,7 @@ while True:
         'ram': porcentagem_ram,
         'disco': porcentagem_disco,
         'nucleos_logicos': nucleos_logicos,
-        'nucleos_fisicos': nucleos_fisicos,
-        'total_processos': total_processos
+        'nucleos_fisicos': nucleos_fisicos
     }])
 
     processosOrdenados_Cpu = sorted(
@@ -121,8 +122,10 @@ while True:
     print("Captura realizada com sucesso!\n")
 
     df_leitura = pd.read_csv('captura.csv')
+    df_leitura['timestamp'] = pd.to_datetime(df_leitura['timestamp'], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+
     print("Ultimo dado inserido:\n")
-    print(f'{df_leitura[len(df_leitura)-1:]}\n')
+    print(df_leitura[df_leitura['timestamp'] >= (df_leitura['timestamp'].max() - timedelta(hours=1))], "\n")
     print("==================================================================================================================")
 
     time.sleep(10)
