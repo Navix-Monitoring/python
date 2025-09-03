@@ -24,6 +24,19 @@ df_processo = pd.DataFrame(columns=['timestamp','id', 'processo', 'uso de cpu', 
 df_processo.to_csv("processos.csv", index=False)
 
 while True:
+    print("==================================================================================================================")
+
+    print(r"""
+        
+        ____            _                             _              
+    / ___|__ _ _ __ | |_ _   _ _ __ __ _ _ __   __| | ___         
+    | |   / _` | '_ \| __| | | | '__/ _` | '_ \ / _` |/ _ \        
+    | |__| (_| | |_) | |_| |_| | | | (_| | | | | (_| | (_) | _ _ _ 
+    \____\__,_| .__/ \__|\__,_|_|  \__,_|_| |_|\__,_|\___(_|_|_|_)
+            |_|                                                 
+    
+    """)
+
     usuario = psutil.users()[0].name
     porcentagem_cpu = psutil.cpu_percent(interval=1)
     porcentagem_ram = psutil.virtual_memory().percent
