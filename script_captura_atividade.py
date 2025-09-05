@@ -124,7 +124,7 @@ while True:
     df_leitura = pd.read_csv('captura.csv')
     df_leitura['timestamp'] = pd.to_datetime(df_leitura['timestamp'], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
-    print("Ultimo dado inserido:\n")
+    print("Ultimo dado inserido na ultima hora:\n")
     print(df_leitura[df_leitura['timestamp'] >= (df_leitura['timestamp'].max() - timedelta(hours=1))], "\n")
     print("==================================================================================================================")
 
