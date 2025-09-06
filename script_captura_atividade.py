@@ -117,7 +117,7 @@ while True:
     print(f"   → ID: {maiorMemoria.info['pid']}, Nome: {maiorMemoria.info['name']}, Memória usada: {formatar_memoria(maiorMemoria.info['memory_info'].rss)}\n")
 
     df_leitura = pd.read_csv('captura.csv')
-    df_leitura['timestamp'] = pd.to_datetime(df_leitura['timestamp'], errors="coerce")
+    df_leitura['timestamp'] = pd.to_datetime(df_leitura['timestamp'], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     ultima_hora = df_leitura[df_leitura['timestamp'] >= (df_leitura['timestamp'].max() - timedelta(hours=1))]
     if not ultima_hora.empty:
