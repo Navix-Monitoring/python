@@ -63,6 +63,11 @@ while True:
             if enderecoMac:
                 break 
 
+    for p in psutil.process_iter(['pid', 'name']):
+        p.cpu_percent(None)
+    time.sleep(1)
+    processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))
+
     df = pd.DataFrame([{
         'timestamp': tempo_atual,
         'endereco_mac': enderecoMac,
