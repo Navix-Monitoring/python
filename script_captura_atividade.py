@@ -108,8 +108,8 @@ while True:
     print(f"* Uso atual da RAM: {porcentagem_ram:.1f}%")
     print(f"* Uso atual do Disco: {porcentagem_disco:.1f}%")
     print(f"* Endereço MAC: {enderecoMac}\n")
-
-    uso_cpu_processo = (maiorCPU.info['cpu_percent'] / (nucleos_logicos * 100)) * porcentagem_cpu
+    
+    uso_cpu_processo = maiorCPU.info['cpu_percent'] / nucleos_logicos
 
     print("-- Programa que mais consome CPU neste momento:")
     print(f"   → ID: {maiorCPU.info['pid']}, Nome: {maiorCPU.info['name']}, Uso de CPU: {uso_cpu_processo:.1f}%\n")
