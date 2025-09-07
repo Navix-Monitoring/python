@@ -122,9 +122,9 @@ while True:
 
     ultima_hora = df_leitura[df_leitura['timestamp'] >= (df_leitura['timestamp'].max() - timedelta(hours=1))]
     if not ultima_hora.empty:
-        media_cpu = ultima_hora['cpu'].mean()
-        media_ram = ultima_hora['ram'].mean()
-        print("-- Consumo médio na última hora:")
+        media_cpu = ultima_hora['cpu'].median()
+        media_ram = ultima_hora['ram'].median()
+        print("-- Mediana de consumo na última hora:")
         print(f"   → CPU: {media_cpu:.1f}%")
         print(f"   → RAM: {media_ram:.1f}%\n")
 
