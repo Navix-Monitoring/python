@@ -9,7 +9,7 @@ import os  # Para interagir com o sistema operacional
 # Criação de um arquivo CSV para armazenar as informações se ele não existir
 if not os.path.exists("captura.csv"):
     df_inicial = pd.DataFrame(columns=[
-        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'quantidade_processos'
+        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'quantidade_processos', 'bateria'
     ])
     df_inicial.to_csv("captura.csv", index=False)
 
@@ -37,6 +37,7 @@ while True:
     tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Hora atual
     processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))  # Dados dos processos
     enderecos = psutil.net_if_addrs()  # Endereços de rede
+    bateria = psutil.sensors_battery().percent
 
     # Coleta do endereço MAC
     enderecoMac = None
@@ -65,7 +66,8 @@ while True:
         'cpu': porcentagem_cpu,
         'ram': porcentagem_ram,
         'disco': porcentagem_disco,
-        'quantidade_processos': qtd_processos
+        'quantidade_processos': qtd_processos,
+        'bateria:': bateria
     }])
     df.to_csv('captura.csv', mode='a', index=False, header=False)  # Salva os dados no CSV
 
@@ -75,6 +77,7 @@ while True:
     print(f"* Uso atual da RAM: {porcentagem_ram:.1f}%")
     print(f"* Uso atual do Disco: {porcentagem_disco:.1f}%")
     print(f"* Quantidade de Processos: {qtd_processos}")
+    print(f"* Porcentagem de Bateria: {bateria}%")
     print(f"* Endereço MAC: {enderecoMac}\n")
 
     print("="*120)  # Linha de separação
