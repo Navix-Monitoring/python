@@ -9,7 +9,7 @@ import os  # Para interagir com o sistema operacional
 # Criação de um arquivo CSV para armazenar as informações se ele não existir
 if not os.path.exists("captura.csv"):
     df_inicial = pd.DataFrame(columns=[
-        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'quantidade_processos', 'bateria'
+        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'quantidade_processos', 'bateria', 'temp_cpu'
     ])
     df_inicial.to_csv("captura.csv", index=False)
 
@@ -38,6 +38,16 @@ while True:
     processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))  # Dados dos processos
     enderecos = psutil.net_if_addrs()  # Endereços de rede
     bateria = psutil.sensors_battery().percent
+    temperatura = psutil.sensors_temperatures(fahrenheit = False);
+
+    if 'coretemp' in temperatura:
+        temperatura_cpu = temperatura['coretemp'][0].current
+    
+        print(f"Temperatura da cpu: {temperatura_cpu}°C")
+    else:
+        temperatura_cpu = 'N/A'
+        print("Não foi possível encontrar o sensor de temperatura da CPU ('coretemp').")
+
 
     # Coleta do endereço MAC
     enderecoMac = None
@@ -67,7 +77,8 @@ while True:
         'ram': porcentagem_ram,
         'disco': porcentagem_disco,
         'quantidade_processos': qtd_processos,
-        'bateria:': bateria
+        'bateria': bateria,
+        'temp_cpu': temperatura_cpu
     }])
     df.to_csv('captura.csv', mode='a', index=False, header=False)  # Salva os dados no CSV
 
@@ -79,6 +90,7 @@ while True:
     print(f"* Quantidade de Processos: {qtd_processos}")
     print(f"* Porcentagem de Bateria: {bateria}%")
     print(f"* Endereço MAC: {enderecoMac}\n")
+    print(f"* Temperatura CPU: {temperatura_cpu}\n")
 
     print("="*120)  # Linha de separação
     time.sleep(10)  # Espera 10 segundos antes de rodar novamente
