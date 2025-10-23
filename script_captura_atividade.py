@@ -5,6 +5,9 @@ from datetime import datetime, timedelta  # Para trabalhar com datas e horários
 import time  # Para fazer pausas no código
 import socket  # Para trabalhar com endereços de rede
 import os  # Para interagir com o sistema operacional
+import logging
+import boto3
+from botocore.exceptions import ClientError
 
 # Criação de um arquivo CSV para armazenar as informações se ele não existir
 if not os.path.exists("captura.csv"):
@@ -24,8 +27,9 @@ def formatar_memoria(valor):
     else:
         return f"{mb:.0f} MB"  # Caso contrário, retorna em MB
 
+tempo = 0
 # Laço que roda indefinidamente, monitorando o sistema a cada 10 segundos
-while True:
+while (tempo <= 30):
     print("="*120)  # Exibe uma linha de separação
     print("\n ", "-"*45 ,"Monitoramento do Sistema", "-"*45 ,"\n")  # Cabeçalho
 
@@ -94,3 +98,10 @@ while True:
 
     print("="*120)  # Linha de separação
     time.sleep(10)  # Espera 10 segundos antes de rodar novamente
+    tempo+=1
+
+s3_client = boto3.client('s3')
+try:
+    response = s3_client.upload_file("captura.csv", "raw", object_name)
+except ClientError as e:
+    logging.error(e)
