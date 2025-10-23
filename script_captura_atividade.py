@@ -93,7 +93,7 @@ while (tempo <= 30):
     print(f"* Uso atual do Disco: {porcentagem_disco:.1f}%")
     print(f"* Quantidade de Processos: {qtd_processos}")
     print(f"* Porcentagem de Bateria: {bateria}%")
-    print(f"* Endereço MAC: {enderecoMac}\n")
+    print(f"* Endereço MAC: {enderecoMac}")
     print(f"* Temperatura CPU: {temperatura_cpu}\n")
 
     print("="*120)  # Linha de separação
@@ -115,6 +115,6 @@ session = boto3.Session(
 
 s3_client = session.client('s3')
 try:
-    response = s3_client.upload_file("captura.csv", "raw", "caputa-" + usuario + ".csv")
+    response = s3_client.upload_file("captura.csv", "raw", "captura-" + usuario + ".csv")
 except ClientError as e:
     logging.error(e)
