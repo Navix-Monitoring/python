@@ -29,7 +29,7 @@ def formatar_memoria(valor):
 
 tempo = 0
 # Laço que roda indefinidamente, monitorando o sistema a cada 10 segundos
-while (tempo <= 30):
+while (tempo <= 1):
     print("="*120)  # Exibe uma linha de separação
     print("\n ", "-"*45 ,"Monitoramento do Sistema", "-"*45 ,"\n")  # Cabeçalho
 
@@ -101,8 +101,9 @@ while (tempo <= 30):
     tempo+=1
 
 # Credenciais
-aws_access_key_id = 'SUA_ACCESS_KEY_ID'
-aws_secret_access_key = 'SUA_SECRET_ACCESS_KEY'
+aws_access_key_id = 'SEU_ACCESS_ID'
+aws_secret_access_key = 'SEU_SECRET_ACCESS_KEY'
+aws_session_token = 'SEU_SESSION_TOKEN'
 aws_region = 'us-east-1'
 usuario = 'SEU_USUARIO'
 
@@ -110,6 +111,7 @@ usuario = 'SEU_USUARIO'
 session = boto3.Session(
     aws_access_key_id=aws_access_key_id,
     aws_secret_access_key=aws_secret_access_key,
+    aws_session_token=aws_session_token,
     region_name=aws_region
 )
 
