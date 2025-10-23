@@ -100,7 +100,19 @@ while (tempo <= 30):
     time.sleep(10)  # Espera 10 segundos antes de rodar novamente
     tempo+=1
 
-s3_client = boto3.client('s3')
+# Credenciais
+aws_access_key_id = 'SUA_ACCESS_KEY_ID'
+aws_secret_access_key = 'SUA_SECRET_ACCESS_KEY'
+aws_region = 'us-east-1'
+
+# Crie uma sessão Boto3 com as credenciais
+session = boto3.Session(
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key,
+    region_name=aws_region
+)
+
+s3_client = session.client('s3')
 try:
     response = s3_client.upload_file("captura.csv", "raw", object_name)
 except ClientError as e:
