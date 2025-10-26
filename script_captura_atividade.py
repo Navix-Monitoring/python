@@ -9,7 +9,8 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 import csv  # Para registrar o tempo dos processos
-
+import requests
+from bs4 import BeautifulSoup
 # ================================
 # Configuração inicial dos arquivos
 # ================================
@@ -48,6 +49,23 @@ def formatar_memoria(valor):
     mb = valor / 1024**2
     return f"{mb/1024:.1f} GB" if mb > 1024 else f"{mb:.0f} MB"
 
+def ler_temp_bateria():
+    try:
+        url = "http://localhost:8085/data.html"  # servidor local do OpenHardwareMonitor
+        resposta = requests.get(url)
+        soup = BeautifulSoup(resposta.text, "html.parser")
+        
+        for linha in soup.find_all("tr"):
+            colunas = linha.find_all("td")
+            if len(colunas) >= 2:
+                nome = colunas[0].text.strip()
+                valor = colunas[1].text.strip()
+                if "Battery" in nome and "°C" in valor:
+                    return valor.replace("°C", "").strip()  # Retorna só o número
+        return "N/A"
+    except Exception:
+        return "N/A"
+
 # ================================
 # Loop de monitoramento
 # ================================
@@ -69,12 +87,17 @@ while tempo <= 33:
     tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     enderecos = psutil.net_if_addrs()
 
-    # Bateria (se existir)
+    # ======== Bateria (se existir) ========
     try:
         bateria_info = psutil.sensors_battery()
         bateria = bateria_info.percent if bateria_info else "N/A"
     except Exception:
         bateria = "N/A"
+
+    # ======== Temperatura da bateria ========
+    temperatura_bateria = ler_temp_bateria()
+    print(f"Temperatura da bateria: {temperatura_bateria}°C")
+
 
     # ======== Temperatura da CPU ========
 
@@ -148,7 +171,8 @@ while tempo <= 33:
         'disco': porcentagem_disco,
         'quantidade_processos': qtd_processos,
         'bateria': bateria,
-        'temp_cpu': temperatura_cpu
+        'temp_cpu': temperatura_cpu,
+        'temp_bateria': temperatura_bateria
     }])
     df.to_csv('captura.csv', mode='a', index=False, header=False)
 
