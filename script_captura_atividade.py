@@ -8,6 +8,8 @@ import os  # Para interagir com o sistema operacional
 import logging
 import boto3
 from botocore.exceptions import ClientError
+import csv  # vai registrar o tempo dos processos
+
 
 # Criação de um arquivo CSV para armazenar as informações se ele não existir
 if not os.path.exists("captura.csv"):
@@ -16,8 +18,21 @@ if not os.path.exists("captura.csv"):
     ])
     df_inicial.to_csv("captura.csv", index=False)
 
+# Criação do CSV de processos, se não existir
+if not os.path.exists("processos.csv"):
+    with open("processos.csv", mode="w", newline="", encoding="utf-8") as arquivo:
+        escritor = csv.writer(arquivo)
+        escritor.writerow(["processo", "data_hora", "duracao_segundos"])
+
 # Atribui o valor correto para o tipo de família de endereços de rede
 AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
+
+# Função para registrar o tempo de cada processo
+def registrar_tempo(processo, inicio, fim):
+    duracao = fim - inicio
+    with open("processos.csv", mode="a", newline="", encoding="utf-8") as arquivo:
+        escritor = csv.writer(arquivo)
+        escritor.writerow([processo, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), round(duracao, 4)])
 
 # Função para formatar a memória em MB ou GB
 def formatar_memoria(valor):
@@ -30,6 +45,8 @@ def formatar_memoria(valor):
 tempo = 0
 # Laço que roda indefinidamente, monitorando o sistema a cada 10 segundos
 while (tempo <= 1):
+    inicio_processo = time.time()  #aqui começa a medição de tempo
+
     print("="*120)  # Exibe uma linha de separação
     print("\n ", "-"*45 ,"Monitoramento do Sistema", "-"*45 ,"\n")  # Cabeçalho
 
@@ -42,15 +59,22 @@ while (tempo <= 1):
     processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))  # Dados dos processos
     enderecos = psutil.net_if_addrs()  # Endereços de rede
     bateria = psutil.sensors_battery().percent
-    temperatura = psutil.sensors_temperatures(fahrenheit = False);
-
-    if 'coretemp' in temperatura:
+    # Coleta de temperatura da CPU 
+    # (tava dando erro pq a versão do psutil instalada no Python não tinha suporte ao método sensors_temperatures()
+    # Nem todo Windows tem sensores de temperatura compatíveis.)
+    #por isso coloquei o try/except :)
+try:
+    temperatura = psutil.sensors_temperatures(fahrenheit=False)
+    if 'coretemp' in temperatura and temperatura['coretemp']:
         temperatura_cpu = temperatura['coretemp'][0].current
-    
-        print(f"Temperatura da cpu: {temperatura_cpu}°C")
+        print(f"Temperatura da CPU: {temperatura_cpu}°C")
     else:
         temperatura_cpu = 'N/A'
         print("Não foi possível encontrar o sensor de temperatura da CPU ('coretemp').")
+except (AttributeError, KeyError):
+    temperatura_cpu = 'N/A'
+    print("O sistema não possui suporte para leitura da temperatura da CPU.")
+
 
 
     # Coleta do endereço MAC
@@ -99,6 +123,10 @@ while (tempo <= 1):
     print("="*120)  # Linha de separação
     time.sleep(10)  # Espera 10 segundos antes de rodar novamente
     tempo+=1
+
+    fim_processo = time.time()  #fim da medição
+    registrar_tempo("monitoramento_ciclo", inicio_processo, fim_processo)  # <-- grava no CSV
+
 
 # Credenciais
 aws_access_key_id = 'SEU_ACCESS_ID'
