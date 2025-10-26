@@ -96,7 +96,7 @@ while tempo <= 33:
 
     # ======== Temperatura da bateria ========
     temperatura_bateria = ler_temp_bateria()
-    print(f"Temperatura da bateria: {temperatura_bateria}°C")
+    ######
 
 
     # ======== Temperatura da CPU ========
@@ -186,6 +186,7 @@ while tempo <= 33:
     print(f"* Porcentagem de Bateria: {bateria}%")
     print(f"* Endereço MAC: {enderecoMac}")
     print(f"* Temperatura CPU: {temperatura_cpu}\n")
+    print(f"Temperatura da bateria: {temperatura_bateria}°C")
 
     print("=" * 120)
 
