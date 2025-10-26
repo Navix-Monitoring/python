@@ -1,68 +1,83 @@
 # Importação das bibliotecas necessárias
 import psutil  # Para coletar informações sobre o sistema (CPU, RAM, discos, etc.)
 import pandas as pd  # Para manipular dados e salvar em CSV
-from datetime import datetime, timedelta  # Para trabalhar com datas e horários
+from datetime import datetime  # Para trabalhar com datas e horários
 import time  # Para fazer pausas no código
 import socket  # Para trabalhar com endereços de rede
 import os  # Para interagir com o sistema operacional
 import logging
 import boto3
 from botocore.exceptions import ClientError
-import csv  # vai registrar o tempo dos processos
+import csv  # Para registrar o tempo dos processos
 
+# ================================
+# Configuração inicial dos arquivos
+# ================================
 
-# Criação de um arquivo CSV para armazenar as informações se ele não existir
+# Criação do arquivo principal de captura
 if not os.path.exists("captura.csv"):
     df_inicial = pd.DataFrame(columns=[
-        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco', 'quantidade_processos', 'bateria', 'temp_cpu'
+        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco',
+        'quantidade_processos', 'bateria', 'temp_cpu'
     ])
     df_inicial.to_csv("captura.csv", index=False)
 
-# Criação do CSV de processos, se não existir
+# Criação do arquivo de processos
 if not os.path.exists("processos.csv"):
     with open("processos.csv", mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
         escritor.writerow(["processo", "data_hora", "duracao_segundos"])
 
-# Atribui o valor correto para o tipo de família de endereços de rede
+# Detecta tipo de família de endereço MAC (compatível Linux/Windows)
 AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
 
-# Função para registrar o tempo de cada processo
+# ================================
+# Funções auxiliares
+# ================================
+
 def registrar_tempo(processo, inicio, fim):
+    """Registra a duração de execução de um processo no CSV."""
     duracao = fim - inicio
     with open("processos.csv", mode="a", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
         escritor.writerow([processo, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), round(duracao, 4)])
 
-# Função para formatar a memória em MB ou GB
+
 def formatar_memoria(valor):
-    mb = valor / 1024**2  # Converte o valor para MB
-    if mb > 1024:
-        return f"{mb/1024:.1f} GB"  # Se for maior que 1 GB, retorna em GB
-    else:
-        return f"{mb:.0f} MB"  # Caso contrário, retorna em MB
+    """Converte bytes para MB ou GB formatados."""
+    mb = valor / 1024**2
+    return f"{mb/1024:.1f} GB" if mb > 1024 else f"{mb:.0f} MB"
+
+# ================================
+# Loop de monitoramento
+# ================================
 
 tempo = 0
-# Laço que roda indefinidamente, monitorando o sistema a cada 10 segundos
-while (tempo <= 33):
-    inicio_processo = time.time()  #aqui começa a medição de tempo
 
-    print("="*120)  # Exibe uma linha de separação
-    print("\n ", "-"*45 ,"Monitoramento do Sistema", "-"*45 ,"\n")  # Cabeçalho
+while tempo <= 33:
+    inicio_processo = time.time()
 
-    # Coleta de dados do sistema
-    usuario = psutil.users()[0].name  # Obtém o nome do usuário
-    porcentagem_cpu = psutil.cpu_percent(interval=1)  # Uso da CPU em porcentagem
-    porcentagem_ram = psutil.virtual_memory().percent  # Uso da RAM em porcentagem
-    porcentagem_disco = psutil.disk_usage('/').percent  # Uso do disco em porcentagem
-    tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Hora atual
-    processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))  # Dados dos processos
-    enderecos = psutil.net_if_addrs()  # Endereços de rede
-    bateria = psutil.sensors_battery().percent
-    # Coleta de temperatura da CPU 
-    # (tava dando erro pq a versão do psutil instalada no Python não tinha suporte ao método sensors_temperatures()
-    # Nem todo Windows tem sensores de temperatura compatíveis.)
-    #por isso coloquei o try/except :)
+    print("=" * 120)
+    print("\n ", "-" * 45, "Monitoramento do Sistema", "-" * 45, "\n")
+
+    # ======== Coleta geral do sistema ========
+
+    usuario = psutil.users()[0].name if psutil.users() else "Desconhecido"
+    porcentagem_cpu = psutil.cpu_percent(interval=1)
+    porcentagem_ram = psutil.virtual_memory().percent
+    porcentagem_disco = psutil.disk_usage('/').percent
+    tempo_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    enderecos = psutil.net_if_addrs()
+
+    # Bateria (se existir)
+    try:
+        bateria_info = psutil.sensors_battery()
+        bateria = bateria_info.percent if bateria_info else "N/A"
+    except Exception:
+        bateria = "N/A"
+
+    # ======== Temperatura da CPU ========
+
     try:
         temperatura = psutil.sensors_temperatures(fahrenheit=False)
         if 'coretemp' in temperatura and temperatura['coretemp']:
@@ -75,28 +90,40 @@ while (tempo <= 33):
         temperatura_cpu = 'N/A'
         print("O sistema não possui suporte para leitura da temperatura da CPU.")
 
+    # ======== Endereço MAC ========
 
-
-    # Coleta do endereço MAC
     enderecoMac = None
-    interfaces_ignoradas = ['lo', 'docker0', 'virbr0', 'tun0']  # Interfaces de rede a serem ignoradas
+    interfaces_ignoradas = ['lo', 'docker0', 'virbr0', 'tun0']
     for interface, enderecos_da_interface in enderecos.items():
         if interface not in interfaces_ignoradas:
             for endereco in enderecos_da_interface:
-                if endereco.family == AF_LINK:  # Se for endereço de link (MAC)
+                if endereco.family == AF_LINK:
                     enderecoMac = endereco.address
                     break
             if enderecoMac:
-                break 
-    qtd_processos = 0
-    # Inicializa a coleta de CPU para os processos
-    for p in psutil.process_iter(['pid', 'name']):
-        qtd_processos += 1
-        p.cpu_percent(None)  # Limpa o histórico de uso de CPU
-    time.sleep(1)  # Aguarda 1 segundo para garantir a atualização dos dados
-    processos = list(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']))  # Atualiza os dados dos processos
+                break
 
-    # Criação de um dataframe com as informações coletadas
+    # ======== Processos ========
+
+    qtd_processos = 0
+    for p in psutil.process_iter(['pid', 'name']):
+        try:
+            qtd_processos += 1
+            p.cpu_percent(None)  # Inicializa leitura de CPU
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+    time.sleep(1)  # Espera 1 segundo para atualização
+
+    processos = []
+    for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
+        try:
+            processos.append(p.info)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+    # ======== Registro no CSV ========
+
     df = pd.DataFrame([{
         'timestamp': tempo_atual,
         'endereco_mac': enderecoMac,
@@ -108,9 +135,10 @@ while (tempo <= 33):
         'bateria': bateria,
         'temp_cpu': temperatura_cpu
     }])
-    df.to_csv('captura.csv', mode='a', index=False, header=False)  # Salva os dados no CSV
+    df.to_csv('captura.csv', mode='a', index=False, header=False)
 
-    # Exibe as informações coletadas no terminal
+    # ======== Saída no terminal ========
+
     print(f"* Usuário conectado: {usuario}")
     print(f"* Uso atual da CPU: {porcentagem_cpu:.1f}%")
     print(f"* Uso atual da RAM: {porcentagem_ram:.1f}%")
@@ -120,22 +148,24 @@ while (tempo <= 33):
     print(f"* Endereço MAC: {enderecoMac}")
     print(f"* Temperatura CPU: {temperatura_cpu}\n")
 
-    print("="*120)  # Linha de separação
-    time.sleep(10)  # Espera 10 segundos antes de rodar novamente
-    tempo+=1
+    print("=" * 120)
 
-    fim_processo = time.time()  #fim da medição
-    registrar_tempo("monitoramento_ciclo", inicio_processo, fim_processo)  # <-- grava no CSV
+    time.sleep(10)
+    tempo += 1
 
+    fim_processo = time.time()
+    registrar_tempo("monitoramento_ciclo", inicio_processo, fim_processo)
 
-# # Credenciais
+# ================================
+# Upload opcional para AWS S3 (comentar/descomentar)
+# ================================
+
 # aws_access_key_id = 'SEU_ACCESS_ID'
 # aws_secret_access_key = 'SEU_SECRET_ACCESS_KEY'
 # aws_session_token = 'SEU_SESSION_TOKEN'
 # aws_region = 'us-east-1'
 # usuario = 'SEU_USUARIO'
 
-# # Crie uma sessão Boto3 com as credenciais
 # session = boto3.Session(
 #     aws_access_key_id=aws_access_key_id,
 #     aws_secret_access_key=aws_secret_access_key,
