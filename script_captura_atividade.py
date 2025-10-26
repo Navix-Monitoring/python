@@ -103,7 +103,7 @@ while tempo <= 33:
             if enderecoMac:
                 break
 
-    # ======== Processos ========
+# ======== Processos ========
 
     qtd_processos = 0
     for p in psutil.process_iter(['pid', 'name']):
@@ -115,12 +115,27 @@ while tempo <= 33:
 
     time.sleep(1)  # Espera 1 segundo para atualização
 
+    # Nova estrutura de coleta de processos com tempo de execução
     processos = []
-    for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
-        try:
-            processos.append(p.info)
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            continue
+    with open("processos.csv", mode="a", newline="", encoding="utf-8") as arquivo:
+        escritor = csv.writer(arquivo)
+
+        for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info', 'create_time']):
+            try:
+                tempo_execucao = datetime.now() - datetime.fromtimestamp(p.info['create_time'])
+                segundos_execucao = tempo_execucao.total_seconds()
+
+                processos.append(p.info)
+
+                escritor.writerow([
+                    p.info['name'],
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    round(segundos_execucao, 2)
+                ])
+
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+
 
     # ======== Registro no CSV ========
 
@@ -154,7 +169,6 @@ while tempo <= 33:
     tempo += 1
 
     fim_processo = time.time()
-    registrar_tempo("monitoramento_ciclo", inicio_processo, fim_processo)
 
 # ================================
 # Upload opcional para AWS S3 (comentar/descomentar)
