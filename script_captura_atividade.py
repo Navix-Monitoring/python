@@ -44,7 +44,7 @@ def formatar_memoria(valor):
 
 tempo = 0
 # Laço que roda indefinidamente, monitorando o sistema a cada 10 segundos
-while (tempo <= 1):
+while (tempo <= 33):
     inicio_processo = time.time()  #aqui começa a medição de tempo
 
     print("="*120)  # Exibe uma linha de separação
@@ -63,17 +63,17 @@ while (tempo <= 1):
     # (tava dando erro pq a versão do psutil instalada no Python não tinha suporte ao método sensors_temperatures()
     # Nem todo Windows tem sensores de temperatura compatíveis.)
     #por isso coloquei o try/except :)
-try:
-    temperatura = psutil.sensors_temperatures(fahrenheit=False)
-    if 'coretemp' in temperatura and temperatura['coretemp']:
-        temperatura_cpu = temperatura['coretemp'][0].current
-        print(f"Temperatura da CPU: {temperatura_cpu}°C")
-    else:
+    try:
+        temperatura = psutil.sensors_temperatures(fahrenheit=False)
+        if 'coretemp' in temperatura and temperatura['coretemp']:
+            temperatura_cpu = temperatura['coretemp'][0].current
+            print(f"Temperatura da CPU: {temperatura_cpu}°C")
+        else:
+            temperatura_cpu = 'N/A'
+            print("Não foi possível encontrar o sensor de temperatura da CPU ('coretemp').")
+    except (AttributeError, KeyError):
         temperatura_cpu = 'N/A'
-        print("Não foi possível encontrar o sensor de temperatura da CPU ('coretemp').")
-except (AttributeError, KeyError):
-    temperatura_cpu = 'N/A'
-    print("O sistema não possui suporte para leitura da temperatura da CPU.")
+        print("O sistema não possui suporte para leitura da temperatura da CPU.")
 
 
 
@@ -128,23 +128,23 @@ except (AttributeError, KeyError):
     registrar_tempo("monitoramento_ciclo", inicio_processo, fim_processo)  # <-- grava no CSV
 
 
-# Credenciais
-aws_access_key_id = 'SEU_ACCESS_ID'
-aws_secret_access_key = 'SEU_SECRET_ACCESS_KEY'
-aws_session_token = 'SEU_SESSION_TOKEN'
-aws_region = 'us-east-1'
-usuario = 'SEU_USUARIO'
+# # Credenciais
+# aws_access_key_id = 'SEU_ACCESS_ID'
+# aws_secret_access_key = 'SEU_SECRET_ACCESS_KEY'
+# aws_session_token = 'SEU_SESSION_TOKEN'
+# aws_region = 'us-east-1'
+# usuario = 'SEU_USUARIO'
 
-# Crie uma sessão Boto3 com as credenciais
-session = boto3.Session(
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    aws_session_token=aws_session_token,
-    region_name=aws_region
-)
+# # Crie uma sessão Boto3 com as credenciais
+# session = boto3.Session(
+#     aws_access_key_id=aws_access_key_id,
+#     aws_secret_access_key=aws_secret_access_key,
+#     aws_session_token=aws_session_token,
+#     region_name=aws_region
+# )
 
-s3_client = session.client('s3')
-try:
-    response = s3_client.upload_file("captura.csv", "raw", "captura-" + usuario + ".csv")
-except ClientError as e:
-    logging.error(e)
+# s3_client = session.client('s3')
+# try:
+#     response = s3_client.upload_file("captura.csv", "raw", "captura-" + usuario + ".csv")
+# except ClientError as e:
+#     logging.error(e)

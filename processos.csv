@@ -758,3 +758,9 @@ timestamp,id,processo,uso_cpu,uso_memoria
 2025-10-01 10:33:43,22316,msedgewebview2.exe,0.00,6.89
 2025-10-01 10:33:43,22380,AppVShNotify.exe,0.00,8.94
 2025-10-01 10:33:43,22440,chrome.exe,0.00,156.66
+monitoramento_ciclo,2025-10-26 17:41:42,13.6145
+monitoramento_ciclo,2025-10-26 17:41:56,14.3078
+monitoramento_ciclo,2025-10-26 17:43:10,14.0083
+monitoramento_ciclo,2025-10-26 17:43:25,14.6523
+monitoramento_ciclo,2025-10-26 17:44:33,14.1868
+monitoramento_ciclo,2025-10-26 17:44:47,14.4039
