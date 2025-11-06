@@ -6,8 +6,8 @@ import time  # Para fazer pausas no código
 import socket  # Para trabalhar com endereços de rede
 import os  # Para interagir com o sistema operacional
 import logging
-import boto3
-from botocore.exceptions import ClientError
+# import boto3
+# from botocore.exceptions import ClientError
 import csv  # Para registrar o tempo dos processos
 import requests
 from bs4 import BeautifulSoup
@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 if not os.path.exists("captura.csv"):
     df_inicial = pd.DataFrame(columns=[
         'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco',
-        'quantidade_processos', 'bateria', 'temp_cpu'
+        'quantidade_processos', 'bateria', 'temp_cpu', 'temp_bateria'
     ])
     df_inicial.to_csv("captura.csv", index=False)
 
@@ -72,7 +72,7 @@ def ler_temp_bateria():
 
 tempo = 0
 
-while tempo <= 33:
+while tempo <= 35:
     inicio_processo = time.time()
 
     print("=" * 120)
@@ -159,6 +159,13 @@ while tempo <= 33:
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
 
+    # ======== Dados errados ========
+    if tempo > 19:
+        if porcentagem_cpu < 100 and porcentagem_disco  < 100 and porcentagem_ram  < 100:
+            porcentagem_cpu = round(porcentagem_cpu * 4.5, 2)
+            porcentagem_ram = round(porcentagem_ram * 1.5, 2)
+            porcentagem_disco = round(porcentagem_disco * 1.2, 2)
+            temperatura_cpu = round(temperatura_cpu * 1.7, 2)
 
     # ======== Registro no CSV ========
 
