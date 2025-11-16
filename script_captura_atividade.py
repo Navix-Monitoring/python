@@ -22,7 +22,7 @@ timestamp = datetime.now().strftime("%Y-%m-%d")
 # Criação do arquivo principal de captura
 if not os.path.exists(f"{id}-{timestamp}.csv"):
     df_inicial = pd.DataFrame(columns=[
-        'timestamp', 'endereco_mac', 'user', 'cpu', 'ram', 'disco',
+        'timestamp', 'endereco_mac', 'cpu', 'ram', 'disco',
         'quantidade_processos', 'bateria', 'temp_cpu', 'temp_bateria'
     ])
     df_inicial.to_csv(f"{id}-{timestamp}.csv", index=False)
@@ -104,7 +104,6 @@ def monitoramento():
 
         # ======== Coleta geral do sistema ========
 
-        usuario = psutil.users()[0].name if psutil.users() else "Desconhecido"
         porcentagem_cpu = psutil.cpu_percent(interval=1)
         porcentagem_ram = psutil.virtual_memory().percent
         porcentagem_disco = psutil.disk_usage('/').percent
@@ -176,7 +175,6 @@ def monitoramento():
         df = pd.DataFrame([{
             'timestamp': tempo_atual,
             'endereco_mac': enderecoMac,
-            'user': usuario,
             'cpu': porcentagem_cpu,
             'ram': porcentagem_ram,
             'disco': porcentagem_disco,
@@ -189,7 +187,6 @@ def monitoramento():
 
         # ======== Saída no terminal ========
 
-        print(f"* Usuário conectado: {usuario}")
         print(f"* Uso atual da CPU: {porcentagem_cpu:.1f}%")
         print(f"* Uso atual da RAM: {porcentagem_ram:.1f}%")
         print(f"* Uso atual do Disco: {porcentagem_disco:.1f}%")
@@ -224,8 +221,9 @@ def monitoramento():
 
 # s3_client = session.client('s3')
 # try:
-#     response = s3_client.upload_file("captura.csv", "raw", "captura-" + usuario + ".csv")
+#     response = s3_client.upload_file(f"{id}-{timestamp}.csv", "raw", id + "-" + timestamp + ".csv")
 # except ClientError as e:
 #     logging.error(e)
+
 if (datetime.now() != time(22,00)):
     monitoramento()
