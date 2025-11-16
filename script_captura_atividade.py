@@ -98,7 +98,6 @@ def coletar_dados():
 tempo = datetime.now()
 def monitoramento():
     while tempo != time(22,00):
-        inicio_processo = time.time()
 
         print("=" * 120)
         print("\n ", "-" * 45, "Monitoramento do Sistema", "-" * 45, "\n")
@@ -228,3 +227,5 @@ def monitoramento():
 #     response = s3_client.upload_file("captura.csv", "raw", "captura-" + usuario + ".csv")
 # except ClientError as e:
 #     logging.error(e)
+if (datetime.now() != time(22,00)):
+    monitoramento()
