@@ -1,8 +1,8 @@
 # Importação das bibliotecas necessárias
 import psutil  # Para coletar informações sobre o sistema (CPU, RAM, discos, etc.)
 import pandas as pd  # Para manipular dados e salvar em CSV
-from datetime import datetime  # Para trabalhar com datas e horários
-import time  # Para fazer pausas no código
+from datetime import datetime,time  # Para trabalhar com datas e horários
+import time as sleep_timer  # Para fazer pausas no código
 import socket  # Para trabalhar com endereços de rede
 import os  # Para interagir com o sistema operacional
 import logging
@@ -29,7 +29,7 @@ if not os.path.exists(f"{id}-{timestamp}.csv"):
 
 # Criação do arquivo de processos
 if not os.path.exists(f"{id}_processos_{timestamp}.csv"):
-    with open("processos.csv", mode="w", newline="", encoding="utf-8") as arquivo:
+    with open(f"{id}_processos_{timestamp}.csv", mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
         escritor.writerow(["Timestamp", "Pid", "Nome","Cpu","Ram","Status","TempoVida" ])
 
@@ -73,7 +73,7 @@ def coletar_dados():
             cpu = processo.info['cpu_percent'] or 0.0
             ram = processo.info['memory_percent'] or 0.0
             status = processo.info['status'] or "indefinido"
-            tempo_vida = time.time() - processo.info['create_time']
+            tempo_vida = sleep_timer.time() - processo.info['create_time']
 
             df_processos = pd.DataFrame([{
                 "Timestamp" : tempo_atual,
@@ -84,7 +84,7 @@ def coletar_dados():
                 "Status": status,
                 "TempoVida": tempo_vida
             }])
-            df_processos.to_csv('{id}')
+            df_processos.to_csv(f"{id}_processos_{timestamp}.csv", mode='a', index=False, header=False)
             
 
         except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -95,9 +95,9 @@ def coletar_dados():
 # Loop de monitoramento
 # ================================
 
-tempo = datetime.now()
+tempo = datetime.now().time()
 def monitoramento():
-    while tempo != time(22,00):
+    while tempo != time(22,00,00):
 
         print("=" * 120)
         print("\n ", "-" * 45, "Monitoramento do Sistema", "-" * 45, "\n")
@@ -159,16 +159,16 @@ def monitoramento():
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
 
-        time.sleep(1)  # Espera 1 segundo para atualização
+        sleep_timer.sleep(1)  # Espera 1 segundo para atualização
 
 
         # ======== Dados errados ========
-        if tempo > 19:
-            if porcentagem_cpu < 100 and porcentagem_disco  < 100 and porcentagem_ram  < 100:
-                porcentagem_cpu = round(porcentagem_cpu * 4.5, 2)
-                porcentagem_ram = round(porcentagem_ram * 1.5, 2)
-                porcentagem_disco = round(porcentagem_disco * 1.2, 2)
-                temperatura_cpu = round(temperatura_cpu * 1.7, 2)
+        #if tempo > 19:
+        #    if porcentagem_cpu < 100 and porcentagem_disco  < 100 and porcentagem_ram  < 100:
+        #        porcentagem_cpu = round(porcentagem_cpu * 4.5, 2)
+        #        porcentagem_ram = round(porcentagem_ram * 1.5, 2)
+        #        porcentagem_disco = round(porcentagem_disco * 1.2, 2)
+        #        temperatura_cpu = round(temperatura_cpu * 1.7, 2)
 
         # ======== Registro no CSV ========
 
@@ -198,9 +198,9 @@ def monitoramento():
 
         print("=" * 120)
 
-        time.sleep(30)
+        sleep_timer.sleep(30)
         coletar_dados()
-        time.sleep(30)
+        sleep_timer.sleep(30)
 
 # ================================
 # Upload opcional para AWS S3 (comentar/descomentar)
@@ -225,5 +225,5 @@ def monitoramento():
 # except ClientError as e:
 #     logging.error(e)
 
-if (datetime.now() != time(22,00)):
+if tempo != time(22,00,00):
     monitoramento()
