@@ -11,7 +11,7 @@ import random # Para variação aleatória da velocidade e simulação
 # ================================
 # Configuração inicial
 # ================================
-id_carro = "BYD1"
+id_carro = 3
 timestamp_inicio = datetime.now().strftime("%Y-%m-%d")
 
 # Variável global para armazenar o estado anterior da bateria (para cálculo de consumo)
@@ -32,7 +32,7 @@ nome_arquivo_processos = f"{id_carro}_processos_{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_processos):
     with open(nome_arquivo_processos, mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
-        escritor.writerow(["Timestamp", "Pid", "Nome","Cpu","Ram","Status","TempoVida" ])
+        escritor.writerow(["Timestamp", "Pid", "Nome","Cpu","Ram","TempoVida", "BytesLidos", "BytesEscritos" ])
 
 # Detecta tipo de família de endereço MAC
 AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
@@ -62,43 +62,47 @@ def ler_temp_bateria(temp_cpu_referencia=None):
     return "N/A"
 
 def coletar_processos(tempo_atual):
-    """Coleta snapshot dos processos."""
-    dados_processos = []
-    for processo in psutil.process_iter(['pid','name','cpu_percent','memory_percent','status','create_time']):
+    for processo in psutil.process_iter(['pid','name','cpu_percent','memory_percent','create_time','io_counters']):
         try:
+
             pid = processo.info['pid']
             nome = processo.info['name'] or "Desconhecido"
             cpu = processo.info['cpu_percent'] or 0.0
             ram = processo.info['memory_percent'] or 0.0
-            status = processo.info['status'] or "indefinido"
             tempo_vida = sleep_timer.time() - processo.info['create_time']
-
-            dados_processos.append({
-                "Timestamp" : tempo_atual,
-                "Pid": pid,
-                "Nome": nome,
-                "Cpu": cpu,
-                "Ram": ram,
-                "Status": status,
-                "TempoVida": tempo_vida
-            })
+            io_contadores = processo.info.get('io_counters')
+            bytes_lidos = 0
+            bytes_escritos = 0
+            if io_contadores:
+                bytes_lidos = io_contadores.read_bytes
+                bytes_escritos = io_contadores.write_bytes
+            
+            if(cpu>0.0 or ram>1.0):
+                dados_processos = pd.DataFrame([{
+                    "Timestamp" : tempo_atual,
+                    "Pid": pid,
+                    "Nome": nome,
+                    "Cpu": cpu,
+                    "Ram": ram,
+                    "TempoVida": tempo_vida,
+                    "BytesLidos": bytes_lidos,
+                    "BytesEscritos": bytes_escritos
+                }])
+                dados_processos.to_csv(nome_arquivo_processos, mode='a', index=False, header=False)
+                
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
-            
-    # Salva em lote (mais eficiente)
-    if dados_processos:
-        df_proc = pd.DataFrame(dados_processos)
-        df_proc.to_csv(nome_arquivo_processos, mode='a', index=False, header=False)
+
 
 # ================================
 # Loop de monitoramento
 # ================================
+tempo = datetime.now().time()
 
 def monitoramento():
     global bateria_anterior # Necessário para modificar a variável global
     
-    # Define limite de horário (ex: até 22h)
-    while datetime.now().time() < time(22, 0, 0):
+    while tempo != time(22, 0, 0):
 
         print("=" * 120)
         print("\n ", "-" * 45, "Monitoramento do Sistema (Carro)", "-" * 45, "\n")
@@ -209,6 +213,7 @@ def monitoramento():
         print(f"* Processos: {qtd_processos}")
         
         # Pausa do loop (60 segundos conforme seu original)
+        coletar_processos(tempo_atual_str)
         sleep_timer.sleep(60)
 
 if __name__ == "__main__":
