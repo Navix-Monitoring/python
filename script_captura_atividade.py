@@ -246,9 +246,9 @@ def monitoramento():
         
         # Pausa do loop (60 segundos conforme seu original)
         coletar_processos(tempo_atual_str)
-        sleep_timer.sleep(60)
+        sleep_timer.sleep(5)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     try:
         monitoramento()
         enviar_para_s3_final(nome_arquivo_principal)
