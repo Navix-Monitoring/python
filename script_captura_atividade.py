@@ -7,12 +7,15 @@ import socket  # Para endereços de rede
 import os  # Sistema operacional
 import csv  # Manipulação de CSV
 import random # Para variação aleatória da velocidade e simulação
+import boto3
+from botocore.exceptions import ClientError
+import logging
 
 # ================================
 # Configuração inicial
 # ================================
 id_carro = 3
-timestamp_inicio = datetime.now().strftime("%Y-%m-%d")
+timestamp_inicio = datetime.now().strftime("%d-%m-%Y")
 
 # Variável global para armazenar o estado anterior da bateria (para cálculo de consumo)
 bateria_anterior = None 
@@ -28,7 +31,7 @@ if not os.path.exists(nome_arquivo_principal):
     df_inicial.to_csv(nome_arquivo_principal, index=False)
 
 # Criação do arquivo de processos
-nome_arquivo_processos = f"{id_carro}_processos_{timestamp_inicio}.csv"
+nome_arquivo_processos = f"{id_carro}processos{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_processos):
     with open(nome_arquivo_processos, mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
@@ -36,6 +39,34 @@ if not os.path.exists(nome_arquivo_processos):
 
 # Detecta tipo de família de endereço MAC
 AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
+
+AWS_ACCESS_KEY = 'AWS_ACCESS_KEY'
+AWS_SECRET_KEY = 'AWS_SECRET_KEY'
+AWS_SESSION_TOKEN = 'AWS_SESSION_TOKEN'
+NOME_BUCKET = 'bucket-raw-navix' # Seu bucket
+
+session = boto3.Session(
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_KEY,
+    aws_session_token=AWS_SESSION_TOKEN,
+    region_name='us-east-1'
+)
+s3_client = session.client('s3')
+
+def enviar_para_s3_final(arquivo_local):
+    try:
+        # Pega o ID do nome do arquivo (ex: 3-2025...)
+        id_extraido = arquivo_local.split('-')[0]
+        mes_atual = datetime.now().month
+        
+        caminho_s3 = f"{id_extraido}/Mes/{mes_atual}/{arquivo_local}"
+        
+        print(f"\n[AWS] Iniciando upload final para: {caminho_s3}...")
+        s3_client.upload_file(arquivo_local, NOME_BUCKET, caminho_s3)
+        print(f"[AWS] Upload realizado com sucesso!")
+        
+    except Exception as e:
+        print(f"[AWS] Erro no upload: {e}")
 
 # ================================
 # Funções auxiliares
@@ -101,13 +132,14 @@ tempo = datetime.now().time()
 
 def monitoramento():
     global bateria_anterior # Necessário para modificar a variável global
-    
-    while tempo != time(22, 0, 0):
+    inicio_teste = sleep_timer.time()
+    #while datetime.now().time() < time(22, 0, 0):
+    while sleep_timer.time() - inicio_teste < 120:
 
         print("=" * 120)
         print("\n ", "-" * 45, "Monitoramento do Sistema (Carro)", "-" * 45, "\n")
 
-        tempo_atual_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        tempo_atual_str = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
         # ======== Coleta Hardware ========
         porcentagem_cpu = psutil.cpu_percent(interval=1)
@@ -216,34 +248,9 @@ def monitoramento():
         coletar_processos(tempo_atual_str)
         sleep_timer.sleep(60)
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     try:
         monitoramento()
+        enviar_para_s3_final(nome_arquivo_principal)
     except KeyboardInterrupt:
         print("\nMonitoramento encerrado pelo usuário.")
-        
-# ================================
-# Upload opcional para AWS S3 (comentar/descomentar)
-# ================================
-
-# aws_access_key_id = 'SEU_ACCESS_ID'
-# aws_secret_access_key = 'SEU_SECRET_ACCESS_KEY'
-# aws_session_token = 'SEU_SESSION_TOKEN'
-# aws_region = 'us-east-1'
-# usuario = 'SEU_USUARIO'
-
-# session = boto3.Session(
-#     aws_access_key_id=aws_access_key_id,
-#     aws_secret_access_key=aws_secret_access_key,
-#     aws_session_token=aws_session_token,
-#     region_name=aws_region
-# )
-
-# s3_client = session.client('s3')
-# try:
-#     response = s3_client.upload_file(f"{id}-{timestamp}.csv", "raw", id + "-" + timestamp + ".csv")
-# except ClientError as e:
-#     logging.error(e)
-
-if tempo != time(22,00,00):
-    monitoramento()
