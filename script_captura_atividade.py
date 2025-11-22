@@ -35,7 +35,7 @@ nome_arquivo_processos = f"{id_carro}processos{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_processos):
     with open(nome_arquivo_processos, mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
-        escritor.writerow(["Timestamp", "Pid", "Nome","Cpu","Ram","TempoVida", "BytesLidos", "BytesEscritos" ])
+        escritor.writerow(["Timestamp", "Pid", "Nome","Cpu","TotalRAM","Ram","TempoVida", "BytesLidos", "BytesEscritos" ])
 
 # Detecta tipo de família de endereço MAC
 AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
@@ -93,13 +93,15 @@ def ler_temp_bateria(temp_cpu_referencia=None):
     return "N/A"
 
 def coletar_processos(tempo_atual):
-    for processo in psutil.process_iter(['pid','name','cpu_percent','memory_percent','create_time','io_counters']):
+   for processo in psutil.process_iter(['pid','name','cpu_percent','memory_percent','create_time','io_counters']):
         try:
-
+            total_ram = round((psutil.virtual_memory().total/ (1024 ** 3)),2)
             pid = processo.info['pid']
             nome = processo.info['name'] or "Desconhecido"
             cpu = processo.info['cpu_percent'] or 0.0
             ram = processo.info['memory_percent'] or 0.0
+            ram_bytes = total_ram * (ram / 100)
+            ram_mb = round((ram_bytes / (1024 * 1024)),2)
             tempo_vida = sleep_timer.time() - processo.info['create_time']
             io_contadores = processo.info.get('io_counters')
             bytes_lidos = 0
@@ -114,7 +116,8 @@ def coletar_processos(tempo_atual):
                     "Pid": pid,
                     "Nome": nome,
                     "Cpu": cpu,
-                    "Ram": ram,
+                    "TotalRAM": total_ram,
+                    "Ram": ram_mb,
                     "TempoVida": tempo_vida,
                     "BytesLidos": bytes_lidos,
                     "BytesEscritos": bytes_escritos
