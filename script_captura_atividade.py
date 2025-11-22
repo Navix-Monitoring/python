@@ -31,7 +31,7 @@ if not os.path.exists(nome_arquivo_principal):
     df_inicial.to_csv(nome_arquivo_principal, index=False)
 
 # Criação do arquivo de processos
-nome_arquivo_processos = f"{id_carro}processos{timestamp_inicio}.csv"
+nome_arquivo_processos = f"{id_carro}_processos_{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_processos):
     with open(nome_arquivo_processos, mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
