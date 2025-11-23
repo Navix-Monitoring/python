@@ -144,7 +144,8 @@ tempo = datetime.now().time()
 def monitoramento():
     global bateria_anterior # Necessário para modificar a variável global
     inicio_teste = sleep_timer.time()
-    #while datetime.now().time() < time(22, 0, 0):
+    #Descomentem essa linha para rodar em looping até as 22
+    #while time(22,0) <=datetime.now().time() <= time(22,5):
     while sleep_timer.time() - inicio_teste < 120:
 
         print("=" * 120)
@@ -212,7 +213,7 @@ def monitoramento():
         except Exception:
             temperatura_cpu = 45.0 # Valor seguro caso falhe tudo para não quebrar a simulação da bateria
 
-        # ======== Temperatura Bateria (Nova Lógica) ========
+        # ======== Temperatura Bateria ========
         # Passamos a temperatura da CPU para ajudar na simulação se o sensor real falhar
         valor_temp_cpu_num = temperatura_cpu if isinstance(temperatura_cpu, (int, float)) else 45.0
         temperatura_bateria = ler_temp_bateria(valor_temp_cpu_num)
@@ -261,7 +262,14 @@ def monitoramento():
 
 if __name__ == "__main__":
     try:
+        #Apagar essa parte quando for fazer rodar até as 22 e voltar
         monitoramento()
         enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
+
+        #Descomentar essa parte para fazer rodar denovo após as 22:05
+        #if (time(22,00) <= tempo <= time(22,5)):
+        #    enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
+        #else:
+        #    monitoramento()
     except KeyboardInterrupt:
         print("\nMonitoramento encerrado pelo usuário.")
