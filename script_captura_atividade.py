@@ -31,7 +31,7 @@ if not os.path.exists(nome_arquivo_principal):
     df_inicial.to_csv(nome_arquivo_principal, index=False)
 
 # Criação do arquivo de processos
-nome_arquivo_processos = f"{id_carro}_processos_{timestamp_inicio}.csv"
+nome_arquivo_processos = f"{id_carro}processos{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_processos):
     with open(nome_arquivo_processos, mode="w", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
@@ -43,7 +43,7 @@ AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
 AWS_ACCESS_KEY = 'AWS_ACCESS_KEY'
 AWS_SECRET_KEY = 'AWS_SECRET_KEY'
 AWS_SESSION_TOKEN = 'AWS_SESSION_TOKEN'
-NOME_BUCKET = 'bucket-raw-navix' # Seu bucket
+NOME_BUCKET = 'bucket-raw-navix' 
 
 session = boto3.Session(
     aws_access_key_id=AWS_ACCESS_KEY,
@@ -53,16 +53,24 @@ session = boto3.Session(
 )
 s3_client = session.client('s3')
 
-def enviar_para_s3_final(arquivo_local):
+def enviar_para_s3_final(arquivo_geral,arquivo_processos):
     try:
         # Pega o ID do nome do arquivo (ex: 3-2025...)
-        id_extraido = arquivo_local.split('-')[0]
+        id_extraido = arquivo_geral.split('-')[0]
         mes_atual = datetime.now().month
-        
-        caminho_s3 = f"{id_extraido}/Mes/{mes_atual}/{arquivo_local}"
-        
+        ano_atual = datetime.now().year
+        dia_atual = datetime.now().day
+
+        #Upload do arquivo geral
+        caminho_s3 = f"{id_extraido}/Ano/{ano_atual}/Mes/{mes_atual}/Dia/{dia_atual}/{arquivo_geral}"
         print(f"\n[AWS] Iniciando upload final para: {caminho_s3}...")
-        s3_client.upload_file(arquivo_local, NOME_BUCKET, caminho_s3)
+        s3_client.upload_file(arquivo_geral, NOME_BUCKET, caminho_s3)
+        print(f"[AWS] Upload realizado com sucesso!")
+
+        #Upload do arquivo de processos
+        caminho_s3_Processos = f"{id_extraido}/Ano/{ano_atual}/Mes/{mes_atual}/Dia/{dia_atual}/{arquivo_processos}"
+        print(f"\n[AWS] Iniciando upload final para: {caminho_s3_Processos}...")
+        s3_client.upload_file(arquivo_processos, NOME_BUCKET, caminho_s3_Processos)
         print(f"[AWS] Upload realizado com sucesso!")
         
     except Exception as e:
@@ -254,6 +262,6 @@ def monitoramento():
 if __name__ == "__main__":
     try:
         monitoramento()
-        enviar_para_s3_final(nome_arquivo_principal)
+        enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
     except KeyboardInterrupt:
         print("\nMonitoramento encerrado pelo usuário.")
