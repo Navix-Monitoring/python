@@ -14,6 +14,7 @@ import logging
 # ================================
 # Configuração inicial
 # ================================
+print("Puxando dados iniciais...")
 id_carro = 3
 timestamp_inicio = datetime.now().strftime("%d-%m-%Y")
 
@@ -21,6 +22,7 @@ timestamp_inicio = datetime.now().strftime("%d-%m-%Y")
 bateria_anterior = None 
 
 # Criação do arquivo principal de captura 
+print("Criando arquivo principal de captura...")
 nome_arquivo_principal = f"{id_carro}-{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_principal):
     df_inicial = pd.DataFrame(columns=[
@@ -31,6 +33,8 @@ if not os.path.exists(nome_arquivo_principal):
     df_inicial.to_csv(nome_arquivo_principal, index=False)
 
 # Criação do arquivo de processos
+print("Criando arquivo de processos...")
+
 nome_arquivo_processos = f"{id_carro}_processos{timestamp_inicio}.csv"
 if not os.path.exists(nome_arquivo_processos):
     with open(nome_arquivo_processos, mode="w", newline="", encoding="utf-8") as arquivo:
@@ -38,6 +42,8 @@ if not os.path.exists(nome_arquivo_processos):
         escritor.writerow(["Timestamp", "Pid", "Nome","Cpu","TotalRAM","Ram","TempoVida", "BytesLidos", "BytesEscritos" ])
 
 # Detecta tipo de família de endereço MAC
+print("Configurações da AWS...")
+
 AF_LINK = getattr(psutil, "AF_LINK", None) or getattr(socket, "AF_PACKET", None)
 
 AWS_ACCESS_KEY = 'AWS_ACCESS_KEY'
@@ -140,14 +146,14 @@ def coletar_processos(tempo_atual):
 # Loop de monitoramento
 # ================================
 tempo = datetime.now().time()
-
+estaDentro = time(22,00)<=tempo<=time(22,5)
 def monitoramento():
     global bateria_anterior # Necessário para modificar a variável global
     inicio_teste = sleep_timer.time()
     #Descomentem essa linha para rodar em looping até as 22
-    #while time(22,0) <=datetime.now().time() <= time(22,5):
-    while sleep_timer.time() - inicio_teste < 120:
-
+    while not estaDentro:
+        print("\nTempo atual é diferente do intervalo de tempo entre 22:00 até 22:05\n")
+    #while sleep_timer.time() - inicio_teste < 120:
         print("=" * 120)
         print("\n ", "-" * 45, "Monitoramento do Sistema (Carro)", "-" * 45, "\n")
 
@@ -256,20 +262,18 @@ def monitoramento():
         print(f"* Vel. Simulada: {velocidade_simulada:.1f} km/h")
         print(f"* Processos: {qtd_processos}")
         
-        # Pausa do loop (60 segundos conforme seu original)
+        # Pausa do loop
         coletar_processos(tempo_atual_str)
         sleep_timer.sleep(5)
 
-if __name__ == "__main__":
-    try:
+print("Iniciando monitoramento...")
+monitoramento()
         #Apagar essa parte quando for fazer rodar até as 22 e voltar
-        monitoramento()
-        enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
-
+        #enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
         #Descomentar essa parte para fazer rodar denovo após as 22:05
-        #if (time(22,00) <= tempo <= time(22,5)):
-        #    enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
-        #else:
-        #    monitoramento()
-    except KeyboardInterrupt:
-        print("\nMonitoramento encerrado pelo usuário.")
+if (time(22,00) <= tempo <= time(22,5)):
+    print("Tempo atual está entre as 22:00 e as 22:05 iniciando envio para AWS")
+    enviar_para_s3_final(nome_arquivo_principal, nome_arquivo_processos)
+else:
+    print("Reiniciando o monitoramento...")
+    monitoramento()
