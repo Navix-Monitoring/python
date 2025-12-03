@@ -264,7 +264,7 @@ def monitoramento():
         
         # Pausa do loop
         coletar_processos(tempo_atual_str)
-        sleep_timer.sleep(5)
+        sleep_timer.sleep(60)
 
 print("Iniciando monitoramento...")
 monitoramento()

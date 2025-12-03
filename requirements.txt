@@ -1,11 +1,3 @@
 psutil
 pandas
-datetime
-timedelta
-socket
-os
-bs4
 boto3
-logging
-ClientError
-requests
